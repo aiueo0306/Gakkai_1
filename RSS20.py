@@ -36,7 +36,7 @@ def generate_rss(items, output_path):
     print(f"\n✅ RSSフィード生成完了！📄 保存先: {output_path}")
 
 # ========= 抽出関数①（新着情報） =========
-def extract_items(page):
+def extract_items1(page):
     rows = page.locator("tr:has(th time):has(td a.external)")
     count = rows.count()
     print(f"📦 発見した記事数: {count}")
@@ -74,7 +74,7 @@ def extract_items(page):
     return items
 
 # ========= 抽出関数②（お知らせ一覧） =========
-def extract_items(page):
+def extract_items2(page):
     rows = page.locator("tr:has(th time):has(td a)")
     count = rows.count()
     print(f"📦 発見した記事数: {count}")
