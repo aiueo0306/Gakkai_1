@@ -15,7 +15,7 @@ ORG_NAME = "日本うつ病学会"
 def generate_rss(items, output_path):
     fg = FeedGenerator()
     fg.title(f"{ORG_NAME}トピックス")
-    fg.link(href=FEED_LINK)
+    fg.link(href=BASE_URL)
     fg.description(f"{ORG_NAME}の最新トピック情報")
     fg.language("ja")
     fg.generator("python-feedgen")
@@ -52,7 +52,7 @@ def extract_items1(page):
             pub_date = datetime.fromisoformat(iso_date).replace(tzinfo=timezone.utc)
 
             # 🔗 <td> 内の <a class="external">
-            a_tag = row.locator("td a.external")
+            a_tag = row.locator("td a.external").first
             title = a_tag.inner_text().strip()
             href = a_tag.get_attribute("href")
             full_link = urljoin(BASE_URL, href)
@@ -90,7 +90,7 @@ def extract_items2(page):
             pub_date = datetime.fromisoformat(iso_date).replace(tzinfo=timezone.utc)
 
             # 🔗 タイトルとリンク
-            a_tag = row.locator("td a")
+            a_tag = row.locator("td a").first
             title = a_tag.inner_text().strip()
             href = a_tag.get_attribute("href")
             full_link = urljoin(BASE_URL, href)
@@ -149,7 +149,7 @@ with sync_playwright() as p:
     items.sort(key=lambda x: x["pub_date"], reverse=True)
 
     # --- RSS生成 ---
-    rss_path = "rss_output/Feed13.xml"
+    rss_path = "rss_output/Feed20.xml"
     generate_rss(items, rss_path)
 
     browser.close()
