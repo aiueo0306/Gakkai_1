@@ -162,6 +162,6 @@ with sync_playwright() as p:
 
     items = items1 + items2
     
-    rss_path = "rss_output/Feed1.xml"
+    rss_path = "rss_output/Feed4.xml"
     generate_rss(items, rss_path)
     browser.close()
