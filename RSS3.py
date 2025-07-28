@@ -2,17 +2,17 @@ from feedgen.feed import FeedGenerator
 from datetime import datetime, timezone
 from urllib.parse import urljoin
 import os
+import re
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
-BASE_URL = "https://new.jhrs.or.jp/"
-DEFAULT_LINK = "https://new.jhrs.or.jp/blog/category/news/"
-
+BASE_URL = "https://new.jhrs.or.jp/blog/category/news/"
+GAKKAI = "日本不整脈心電学会"
 
 def generate_rss(items, output_path):
     fg = FeedGenerator()
-    fg.title("日本不整脈心電学会トピックス")
-    fg.link(href=DEFAULT_LINK)
-    fg.description("日本不整脈心電学会の最新トピック情報")
+    fg.title(f"{GAKKAI}トピックス")
+    fg.link(href=BASE_URL)
+    fg.description(f"{GAKKAI}の最新トピック情報")
     fg.language("ja")
     fg.generator("python-feedgen")
     fg.docs("http://www.rssboard.org/rss-specification")
@@ -33,49 +33,49 @@ def generate_rss(items, output_path):
 
 
 def extract_items(page):
-    selector = ".postlist"
-    rows = page.locator(selector)
-    count = rows.count()
+    
+    selector = "div.pagemain h2"
+    
+    page.wait_for_selector(selector, timeout=10000) 
+    
+    blocks = page.locator(selector)
+    count = blocks.count()
     print(f"📦 発見した記事数: {count}")
     items = []
 
     max_items = 10
     for i in range(min(count, max_items)):
-        row = rows.nth(i)
         try:
-            # 🗓 日付の取得
-            date_text = row.locator(".date").inner_text().strip()
-            pub_date = datetime.strptime(date_text, "%Y.%m.%d").replace(tzinfo=timezone.utc)
+            block = blocks.nth(i)
 
-            # 📂 カテゴリの取得（なければ空文字）
-            category = ""
+            # 🕒 日付を現在時刻に固定
+            pub_date = datetime.now(timezone.utc)
+
+            title = block.locator("a").first.inner_text().strip()
+                
             try:
-                category = row.locator(".category").inner_text().strip() + "："
+                href = block.locator("a").first.get_attribute("href")
+                full_link = urljoin(BASE_URL, href)
             except:
-                pass
+                href = ""
+                full_link = BASE_URL
 
-            # 🔗 タイトルとリンクの取得
-            a_tag = row.locator(".title a")
-            title = a_tag.inner_text().strip()
-            href = a_tag.get_attribute("href")
-            full_link = urljoin(BASE_URL, href) if href else DEFAULT_LINK
-
-            # 📝 説明文（カテゴリ付き）
-            description = f"{category}{title}"
-
+            if not title or not href:
+                print(f"⚠ 必須フィールドが欠落したためスキップ（{i+1}行目）: title='{title}', href='{href}'")
+                continue
+            
             items.append({
                 "title": title,
                 "link": full_link,
-                "description": description,
+                "description": title,
                 "pub_date": pub_date
             })
 
         except Exception as e:
             print(f"⚠ 行{i+1}の解析に失敗: {e}")
             continue
-
+            
     return items
-
 
 # ===== 実行ブロック =====
 with sync_playwright() as p:
@@ -86,7 +86,7 @@ with sync_playwright() as p:
 
     try:
         print("▶ ページにアクセス中...")
-        page.goto(DEFAULT_LINK, timeout=30000)
+        page.goto(BASE_URL, timeout=30000)
         page.wait_for_load_state("load", timeout=30000)
     except PlaywrightTimeoutError:
         print("⚠ ページの読み込みに失敗しました。")
@@ -99,6 +99,6 @@ with sync_playwright() as p:
     if not items:
         print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
 
-    rss_path = "rss_output/Feed3.xml"
+    rss_path = "rss_output/Feed1.xml"
     generate_rss(items, rss_path)
     browser.close()
