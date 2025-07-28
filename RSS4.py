@@ -76,7 +76,7 @@ def extract_items1(page):
             print(f"⚠ 行{i+1}の解析に失敗: {e}")
             continue
             
-    return items
+    return items1
 
 def extract_items2(page):
     
@@ -121,7 +121,7 @@ def extract_items2(page):
             print(f"⚠ 行{i+1}の解析に失敗: {e}")
             continue
             
-    return items
+    return items2
 
 # ===== 実行ブロック =====
 with sync_playwright() as p:
