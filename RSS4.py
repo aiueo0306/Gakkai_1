@@ -56,7 +56,7 @@ def extract_items1(page):
                 
             try:
                 href = block.locator("a").first.get_attribute("href")
-                full_link = urljoin(BASE_URL, href)
+                full_link = urljoin(BASE_URL1, href)
             except:
                 href = ""
                 full_link = BASE_URL
@@ -101,7 +101,7 @@ def extract_items2(page):
                 
             try:
                 href = block.locator("a").first.get_attribute("href")
-                full_link = urljoin(BASE_URL, href)
+                full_link = urljoin(BASE_URL2, href)
             except:
                 href = ""
                 full_link = BASE_URL
