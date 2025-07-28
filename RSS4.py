@@ -42,7 +42,7 @@ def extract_items1(page):
     blocks = page.locator(selector)
     count = blocks.count()
     print(f"📦 発見した記事数: {count}")
-    items = []
+    items1 = []
 
     max_items = 10
     for i in range(min(count, max_items)):
@@ -87,7 +87,7 @@ def extract_items2(page):
     blocks = page.locator(selector)
     count = blocks.count()
     print(f"📦 発見した記事数: {count}")
-    items = []
+    items2 = []
 
     max_items = 10
     for i in range(min(count, max_items)):
