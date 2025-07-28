@@ -142,7 +142,7 @@ with sync_playwright() as p:
     print("▶ 記事を抽出しています...")
     items1 = extract_items1(page)
 
-    if not items:
+    if not items1:
         print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
     
     try:
@@ -157,7 +157,7 @@ with sync_playwright() as p:
     print("▶ 記事を抽出しています...")
     items2 = extract_items2(page)
     
-    if not items:
+    if not items2:
         print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
 
     items = items1 + items2
