@@ -99,6 +99,6 @@ with sync_playwright() as p:
     if not items:
         print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
 
-    rss_path = "rss_output/Feed1.xml"
+    rss_path = "rss_output/Feed2.xml"
     generate_rss(items, rss_path)
     browser.close()
