@@ -59,7 +59,7 @@ def extract_items1(page):
                 full_link = urljoin(BASE_URL1, href)
             except:
                 href = ""
-                full_link = BASE_URL
+                full_link = BASE_URL1
 
             if not title or not href:
                 print(f"⚠ 必須フィールドが欠落したためスキップ（{i+1}行目）: title='{title}', href='{href}'")
@@ -104,7 +104,7 @@ def extract_items2(page):
                 full_link = urljoin(BASE_URL2, href)
             except:
                 href = ""
-                full_link = BASE_URL
+                full_link = BASE_URL2
 
             if not title or not href:
                 print(f"⚠ 必須フィールドが欠落したためスキップ（{i+1}行目）: title='{title}', href='{href}'")
