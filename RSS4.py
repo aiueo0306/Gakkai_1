@@ -65,7 +65,7 @@ def extract_items1(page):
                 print(f"⚠ 必須フィールドが欠落したためスキップ（{i+1}行目）: title='{title}', href='{href}'")
                 continue
             
-            items.append({
+            items1.append({
                 "title": title,
                 "link": full_link,
                 "description": title,
@@ -110,7 +110,7 @@ def extract_items2(page):
                 print(f"⚠ 必須フィールドが欠落したためスキップ（{i+1}行目）: title='{title}', href='{href}'")
                 continue
             
-            items.append({
+            items2.append({
                 "title": title,
                 "link": full_link,
                 "description": title,
