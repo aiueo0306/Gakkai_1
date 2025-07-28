@@ -9,7 +9,7 @@ BASE_URL1 = "https://www.chemotherapy.or.jp/modules/newslist/index.php?content_i
 BASE_URL2 = "https://www.chemotherapy.or.jp/modules/newslist/index.php?content_id=4"
 GAKKAI = "日本化学療法学会"
 
-def generate_rss1(items, output_path):
+def generate_rss(items, output_path):
     fg = FeedGenerator()
     fg.title(f"{GAKKAI}トピックス")
     fg.link(href=BASE_URL1)
@@ -78,30 +78,6 @@ def extract_items1(page):
             
     return items
 
-def generate_rss2(items, output_path):
-    fg = FeedGenerator()
-    fg.title(f"{GAKKAI}トピックス")
-    fg.link(href=BASE_URL2)
-    fg.description(f"{GAKKAI}の最新トピック情報")
-    fg.language("ja")
-    fg.generator("python-feedgen")
-    fg.docs("http://www.rssboard.org/rss-specification")
-    fg.lastBuildDate(datetime.now(timezone.utc))
-
-    for item in items:
-        entry = fg.add_entry()
-        entry.title(item['title'])
-        entry.link(href=item['link'])
-        entry.description(item['description'])
-        guid_value = f"{item['link']}#{item['pub_date'].strftime('%Y%m%d')}"
-        entry.guid(guid_value, permalink=False)
-        entry.pubDate(item['pub_date'])
-
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    fg.rss_file(output_path)
-    print(f"\n✅ RSSフィード生成完了！📄 保存先: {output_path}")
-
-
 def extract_items2(page):
     
     selector = "div.box_topics div.news_title"
@@ -164,7 +140,7 @@ with sync_playwright() as p:
         exit()
 
     print("▶ 記事を抽出しています...")
-    items1 = extract_items(page)
+    items1 = extract_items1(page)
 
     if not items:
         print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
@@ -179,7 +155,7 @@ with sync_playwright() as p:
         exit()
 
     print("▶ 記事を抽出しています...")
-    items2 = extract_items(page)
+    items2 = extract_items2(page)
     
     if not items:
         print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
