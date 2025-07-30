@@ -35,7 +35,7 @@ def generate_rss(items, output_path):
 
 def extract_items1(page):
     
-    selector = "div.infoList h4"
+    selector = "div.infoList h4.entryTitle"
     
     page.wait_for_selector(selector, timeout=10000) 
     
@@ -80,7 +80,7 @@ def extract_items1(page):
 
 def extract_items2(page):
     
-    selector = "div.infoList h4"
+    selector = "div.infoList h4.entryTitle"
     
     page.wait_for_selector(selector, timeout=10000) 
     
