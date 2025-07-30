@@ -5,18 +5,15 @@ import os
 import re
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
-# ========= 基本設定 =========
-BASE_URL = "https://www.secretariat.ne.jp/jsmd/"  # またはそのトップページURL
-DEFAULT_LINK1 = "https://www.secretariat.ne.jp/jsmd/info/info-shintyaku-index.html"
-DEFAULT_LINK2 = "https://www.secretariat.ne.jp/jsmd/info/info-index.html"
-ORG_NAME = "日本うつ病学会"
+BASE_URL1 = "https://www.secretariat.ne.jp/jsmd/"
+BASE_URL2 = "https://www.secretariat.ne.jp/jsmd/"
+GAKKAI = "日本うつ病学会"
 
-# ========= RSS生成関数 =========
 def generate_rss(items, output_path):
     fg = FeedGenerator()
-    fg.title(f"{ORG_NAME}トピックス")
-    fg.link(href=BASE_URL)
-    fg.description(f"{ORG_NAME}の最新トピック情報")
+    fg.title(f"{GAKKAI}トピックス")
+    fg.link(href=BASE_URL1)
+    fg.description(f"{GAKKAI}の最新トピック情報")
     fg.language("ja")
     fg.generator("python-feedgen")
     fg.docs("http://www.rssboard.org/rss-specification")
@@ -35,121 +32,136 @@ def generate_rss(items, output_path):
     fg.rss_file(output_path)
     print(f"\n✅ RSSフィード生成完了！📄 保存先: {output_path}")
 
-# ========= 抽出関数①（新着情報） =========
+
 def extract_items1(page):
-    rows = page.locator("tr:has(th time):has(td a.external)")
-    count = rows.count()
+    
+    selector = "div#news_frame01 dl"
+    
+    page.wait_for_selector(selector, timeout=10000) 
+    
+    blocks = page.locator(selector)
+    count = blocks.count()
     print(f"📦 発見した記事数: {count}")
-    items = []
+    items1 = []
 
-    for i in range(count):
+    max_items = 10
+    for i in range(min(count, max_items)):
         try:
-            row = rows.nth(i)
+            block = blocks.nth(i)
 
-            # 📅 <time> タグの datetime 属性を ISO 形式で取得
-            time_tag = row.locator("th time")
-            iso_date = time_tag.get_attribute("datetime")  # e.g. '2020-05-22'
-            pub_date = datetime.fromisoformat(iso_date).replace(tzinfo=timezone.utc)
+            # 🕒 日付を現在時刻に固定
+            pub_date = datetime.now(timezone.utc)
 
-            # 🔗 <td> 内の <a class="external">
-            a_tag = row.locator("td a.external").first
-            title = a_tag.inner_text().strip()
-            href = a_tag.get_attribute("href")
-            full_link = urljoin(BASE_URL, href)
+            title = block.locator("a").first.inner_text().strip()
+                
+            try:
+                href = block.locator("a").first.get_attribute("href")
+                full_link = urljoin(BASE_URL1, href)
+            except:
+                href = ""
+                full_link = BASE_URL1
 
-            # 📝 <td> 全体のテキストを説明文に
-            description = row.locator("td").inner_text().strip()
-
-            items.append({
+            if not title or not href:
+                print(f"⚠ 必須フィールドが欠落したためスキップ（{i+1}行目）: title='{title}', href='{href}'")
+                continue
+            
+            items1.append({
                 "title": title,
                 "link": full_link,
-                "description": description,
+                "description": title,
                 "pub_date": pub_date
             })
 
         except Exception as e:
             print(f"⚠ 行{i+1}の解析に失敗: {e}")
             continue
+            
+    return items1
 
-    return items
-
-# ========= 抽出関数②（お知らせ一覧） =========
 def extract_items2(page):
-    rows = page.locator("tr:has(th time):has(td a)")
-    count = rows.count()
+    
+    selector = "div#tab2 dl"
+    
+    page.wait_for_selector(selector, timeout=10000) 
+    
+    blocks = page.locator(selector)
+    count = blocks.count()
     print(f"📦 発見した記事数: {count}")
-    items = []
+    items2 = []
 
-    for i in range(count):
+    max_items = 10
+    for i in range(min(count, max_items)):
         try:
-            row = rows.nth(i)
+            block = blocks.nth(i)
 
-            # 📅 日付：<time datetime="YYYY-MM-DD"> → ISO形式で取得
-            time_tag = row.locator("th time")
-            iso_date = time_tag.get_attribute("datetime")
-            pub_date = datetime.fromisoformat(iso_date).replace(tzinfo=timezone.utc)
+            # 🕒 日付を現在時刻に固定
+            pub_date = datetime.now(timezone.utc)
 
-            # 🔗 タイトルとリンク
-            a_tag = row.locator("td a").first
-            title = a_tag.inner_text().strip()
-            href = a_tag.get_attribute("href")
-            full_link = urljoin(BASE_URL, href)
+            title = block.locator("a").first.inner_text().strip()
+                
+            try:
+                href = block.locator("a").first.get_attribute("href")
+                full_link = urljoin(BASE_URL2, href)
+            except:
+                href = ""
+                full_link = BASE_URL2
 
-            # 📝 説明文：<td> の中身すべて
-            description = row.locator("td").inner_text().strip()
-
-            items.append({
+            if not title or not href:
+                print(f"⚠ 必須フィールドが欠落したためスキップ（{i+1}行目）: title='{title}', href='{href}'")
+                continue
+            
+            items2.append({
                 "title": title,
                 "link": full_link,
-                "description": description,
+                "description": title,
                 "pub_date": pub_date
             })
 
         except Exception as e:
             print(f"⚠ 行{i+1}の解析に失敗: {e}")
             continue
+            
+    return items2
 
-    return items
-
-
-# ========= 実行ブロック =========
+# ===== 実行ブロック =====
 with sync_playwright() as p:
     print("▶ ブラウザを起動中...")
     browser = p.chromium.launch(headless=True)
     context = browser.new_context()
+    page = context.new_page()
 
-    # --- ページ1 ---
-    page1 = context.new_page()
     try:
-        print("▶ [1ページ目] アクセス中...")
-        page1.goto(DEFAULT_LINK1, timeout=30000)
-        page1.wait_for_load_state("load", timeout=30000)
-        items1 = extract_items1(page1)
-        if not items1:
-            print("⚠ [1ページ目] 抽出できた記事がありません。")
+        print("▶ ページにアクセス中...")
+        page.goto(BASE_URL1, timeout=30000)
+        page.wait_for_load_state("load", timeout=30000)
     except PlaywrightTimeoutError:
-        print("⚠ [1ページ目] 読み込み失敗")
-        items1 = []
+        print("⚠ ページの読み込みに失敗しました。")
+        browser.close()
+        exit()
 
-    # --- ページ2 ---
-    page2 = context.new_page()
+    print("▶ 記事を抽出しています...")
+    items1 = extract_items1(page)
+
+    if not items1:
+        print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
+    
     try:
-        print("▶ [2ページ目] アクセス中...")
-        page2.goto(DEFAULT_LINK2, timeout=30000)
-        page2.wait_for_load_state("load", timeout=30000)
-        items2 = extract_items2(page2)
-        if not items2:
-            print("⚠ [2ページ目] 抽出できた記事がありません。")
+        print("▶ ページにアクセス中...")
+        page.goto(BASE_URL2, timeout=30000)
+        page.wait_for_load_state("load", timeout=30000)
     except PlaywrightTimeoutError:
-        print("⚠ [2ページ目] 読み込み失敗")
-        items2 = []
+        print("⚠ ページの読み込みに失敗しました。")
+        browser.close()
+        exit()
 
-    # --- 統合 + 並べ替え ---
+    print("▶ 記事を抽出しています...")
+    items2 = extract_items2(page)
+    
+    if not items2:
+        print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
+
     items = items1 + items2
-    items.sort(key=lambda x: x["pub_date"], reverse=True)
-
-    # --- RSS生成 ---
+    
     rss_path = "rss_output/Feed20.xml"
     generate_rss(items, rss_path)
-
     browser.close()
