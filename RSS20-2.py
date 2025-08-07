@@ -21,25 +21,24 @@ sys.path.append(SHARED_DIR)
 from rss_utils import generate_rss
 from scraper_utils import extract_items
 
-# ===== 固定情報（学会サイト） =====
-BASE_URL = "http://www.jiaio.umin.jp/"
-GAKKAI = "日本耳鼻咽喉免疫アレルギー学会"
+BASE_URL = "https://www.secretariat.ne.jp/jsmd/"
+GAKKAI = "日本うつ病学会"
 
-SELECTOR_TITLE = "div#news dd"
+SELECTOR_TITLE = "div#news_frame01 dd"
 title_selector = "a"
 title_index = 0
 href_selector = "a"
 href_index = 0
-SELECTOR_DATE = "div#news dt"
-date_selector = ""
-date_index = 0
-year_unit = "."
-month_unit = "."
-day_unit = ""
+SELECTOR_DATE = "div#news_frame01 dt"
+date_selector = ""  
+date_index = 0       
+year_unit = "/"
+month_unit = "/"
+day_unit = ""  
 date_format = f"%Y{year_unit}%m{month_unit}%d{day_unit}"
 date_regex = rf"(\d{{2,4}}){year_unit}(\d{{1,2}}){month_unit}(\d{{1,2}}){day_unit}"
 
-# ===== Playwright 実行ブロック =====
+# ===== 実行ブロック =====
 with sync_playwright() as p:
     print("▶ ブラウザを起動中...")
     browser = p.chromium.launch(headless=True)
@@ -50,31 +49,30 @@ with sync_playwright() as p:
         print("▶ ページにアクセス中...")
         page.goto(BASE_URL, timeout=30000)
         page.wait_for_load_state("load", timeout=30000)
-    except TimeoutError as e:
+    except PlaywrightTimeoutError:
         print("⚠ ページの読み込みに失敗しました。")
         browser.close()
         exit()
 
     print("▶ 記事を抽出しています...")
     items = extract_items(
-        page,
-        SELECTOR_DATE,
-        SELECTOR_TITLE,
-        title_selector,
-        title_index,
-        href_selector,
-        href_index,
-        BASE_URL,
-        date_selector,
-        date_index,
-        date_format,
-        date_regex,
+    page,
+    SELECTOR_DATE,
+    SELECTOR_TITLE,
+    title_selector,
+    title_index,
+    href_selector,
+    href_index,
+    BASE_URL,
+    date_selector,    
+    date_index,      
+    date_format, 
+    date_regex, 
     )
 
     if not items:
         print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
 
-    os.makedirs("rss_output", exist_ok=True)
-    rss_path = "rss_output/Feed1.xml"
+    rss_path = "rss_output/Feed20-2.xml"
     generate_rss(items, rss_path, BASE_URL, GAKKAI)
     browser.close()

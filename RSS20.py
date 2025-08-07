@@ -1,126 +1,42 @@
-from feedgen.feed import FeedGenerator
-from datetime import datetime, timezone
-from urllib.parse import urljoin
 import os
-import re
+import sys
+import subprocess
+import tempfile
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
-BASE_URL1 = "https://www.secretariat.ne.jp/jsmd/"
-BASE_URL2 = "https://www.secretariat.ne.jp/jsmd/"
+# ===== GitHub 上の共通関数を一時ディレクトリにクローン =====
+REPO_URL = "https://github.com/aiueo0306/shared-python-env.git"
+SHARED_DIR = os.path.join(tempfile.gettempdir(), "shared-python-env")
+
+if not os.path.exists(SHARED_DIR):
+    print("🔄 共通関数を初回クローン中...")
+    subprocess.run(["git", "clone", "--depth", "1", REPO_URL, SHARED_DIR], check=True)
+else:
+    print("🔁 共通関数を更新中...")
+    subprocess.run(["git", "-C", SHARED_DIR, "pull"], check=True)
+
+sys.path.append(SHARED_DIR)
+
+# ===== 共通関数のインポート =====
+from rss_utils import generate_rss
+from scraper_utils import extract_items
+
+BASE_URL = "https://www.secretariat.ne.jp/jsmd/"
 GAKKAI = "日本うつ病学会"
 
-def generate_rss(items, output_path):
-    fg = FeedGenerator()
-    fg.title(f"{GAKKAI}トピックス")
-    fg.link(href=BASE_URL1)
-    fg.description(f"{GAKKAI}の最新トピック情報")
-    fg.language("ja")
-    fg.generator("python-feedgen")
-    fg.docs("http://www.rssboard.org/rss-specification")
-    fg.lastBuildDate(datetime.now(timezone.utc))
-
-    for item in items:
-        entry = fg.add_entry()
-        entry.title(item['title'])
-        entry.link(href=item['link'])
-        entry.description(item['description'])
-        entry.guid(item['link'], permalink=True)
-        entry.pubDate(item['pub_date'])
-
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    fg.rss_file(output_path)
-    print(f"\n✅ RSSフィード生成完了！📄 保存先: {output_path}")
-
-
-def extract_items1(page):
-    
-    selector = "div#news_frame01 dl"
-    
-    page.wait_for_selector(selector, timeout=10000) 
-    
-    blocks = page.locator(selector)
-    count = blocks.count()
-    print(f"📦 発見した記事数: {count}")
-    items1 = []
-
-    max_items = 10
-    for i in range(min(count, max_items)):
-        try:
-            block = blocks.nth(i)
-
-            # 🕒 日付を現在時刻に固定
-            pub_date = datetime.now(timezone.utc)
-
-            title = block.locator("a").first.inner_text().strip()
-                
-            try:
-                href = block.locator("a").first.get_attribute("href")
-                full_link = urljoin(BASE_URL1, href)
-            except:
-                href = ""
-                full_link = BASE_URL1
-
-            if not title or not href:
-                print(f"⚠ 必須フィールドが欠落したためスキップ（{i+1}行目）: title='{title}', href='{href}'")
-                continue
-            
-            items1.append({
-                "title": title,
-                "link": full_link,
-                "description": title,
-                "pub_date": pub_date
-            })
-
-        except Exception as e:
-            print(f"⚠ 行{i+1}の解析に失敗: {e}")
-            continue
-            
-    return items1
-
-def extract_items2(page):
-    
-    selector = "div#tab2 dl"
-    
-    page.wait_for_selector(selector, timeout=10000) 
-    
-    blocks = page.locator(selector)
-    count = blocks.count()
-    print(f"📦 発見した記事数: {count}")
-    items2 = []
-
-    max_items = 10
-    for i in range(min(count, max_items)):
-        try:
-            block = blocks.nth(i)
-
-            # 🕒 日付を現在時刻に固定
-            pub_date = datetime.now(timezone.utc)
-
-            title = block.locator("a").first.inner_text().strip()
-                
-            try:
-                href = block.locator("a").first.get_attribute("href")
-                full_link = urljoin(BASE_URL2, href)
-            except:
-                href = ""
-                full_link = BASE_URL2
-
-            if not title or not href:
-                print(f"⚠ 必須フィールドが欠落したためスキップ（{i+1}行目）: title='{title}', href='{href}'")
-                continue
-            
-            items2.append({
-                "title": title,
-                "link": full_link,
-                "description": title,
-                "pub_date": pub_date
-            })
-
-        except Exception as e:
-            print(f"⚠ 行{i+1}の解析に失敗: {e}")
-            continue
-            
-    return items2
+SELECTOR_TITLE = "div#news_frame02 dd"
+title_selector = "a"
+title_index = 0
+href_selector = "a"
+href_index = 0
+SELECTOR_DATE = "div#news_frame02 dt"
+date_selector = ""  
+date_index = 0       
+year_unit = "/"
+month_unit = "/"
+day_unit = ""  
+date_format = f"%Y{year_unit}%m{month_unit}%d{day_unit}"
+date_regex = rf"(\d{{2,4}}){year_unit}(\d{{1,2}}){month_unit}(\d{{1,2}}){day_unit}"
 
 # ===== 実行ブロック =====
 with sync_playwright() as p:
@@ -131,7 +47,7 @@ with sync_playwright() as p:
 
     try:
         print("▶ ページにアクセス中...")
-        page.goto(BASE_URL1, timeout=30000)
+        page.goto(BASE_URL, timeout=30000)
         page.wait_for_load_state("load", timeout=30000)
     except PlaywrightTimeoutError:
         print("⚠ ページの読み込みに失敗しました。")
@@ -139,28 +55,24 @@ with sync_playwright() as p:
         exit()
 
     print("▶ 記事を抽出しています...")
-    items1 = extract_items1(page)
+    items = extract_items(
+    page,
+    SELECTOR_DATE,
+    SELECTOR_TITLE,
+    title_selector,
+    title_index,
+    href_selector,
+    href_index,
+    BASE_URL,
+    date_selector,    
+    date_index,      
+    date_format, 
+    date_regex, 
+    )
 
-    if not items1:
-        print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
-    
-    try:
-        print("▶ ページにアクセス中...")
-        page.goto(BASE_URL2, timeout=30000)
-        page.wait_for_load_state("load", timeout=30000)
-    except PlaywrightTimeoutError:
-        print("⚠ ページの読み込みに失敗しました。")
-        browser.close()
-        exit()
-
-    print("▶ 記事を抽出しています...")
-    items2 = extract_items2(page)
-    
-    if not items2:
+    if not items:
         print("⚠ 抽出できた記事がありません。HTML構造が変わっている可能性があります。")
 
-    items = items1 + items2
-    
     rss_path = "rss_output/Feed20.xml"
-    generate_rss(items, rss_path)
+    generate_rss(items, rss_path, BASE_URL, GAKKAI)
     browser.close()
