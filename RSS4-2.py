@@ -22,7 +22,7 @@ from rss_utils import generate_rss
 from scraper_utils import extract_items
 
 BASE_URL = "https://www.chemotherapy.or.jp/modules/newslist/index.php?content_id=4"
-GAKKAI = "日本化学療法学会"
+GAKKAI = "日本化学療法学会 (全てのお知らせ)"
 
 SELECTOR_TITLE = "div.box_topics div.news_title"
 title_selector = "a"
