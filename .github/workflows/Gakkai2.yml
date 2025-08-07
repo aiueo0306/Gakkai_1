@@ -46,6 +46,10 @@ jobs:
         run: python RSS4.py || echo "RSS4.py failed" >> errors.log
         continue-on-error: true
 
+      - name: Run RSS4-2
+        run: python RSS4-2.py || echo "RSS4-2.py failed" >> errors.log
+        continue-on-error: true
+
       - name: Run RSS5
         run: python RSS5.py || echo "RSS5.py failed" >> errors.log
         continue-on-error: true
@@ -108,6 +112,10 @@ jobs:
         
       - name: Run RSS20
         run: python RSS20.py || echo "RSS20.py failed" >> errors.log
+        continue-on-error: true
+
+      - name: Run RSS20-2
+        run: python RSS20-2.py || echo "RSS20-2.py failed" >> errors.log
         continue-on-error: true
 
       - name: Merge RSS feeds into combined.xml
