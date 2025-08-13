@@ -39,7 +39,7 @@ for xml_file in glob('rss_output/*.xml'):
         # GUID は entry.guid または entry.link を使用
         guid = entry.get("guid") or entry.get("link")
         if guid:
-            fe.guid(guid.strip(), permalink=True)
+            fe.guid(guid.strip(), permalink=false)
 
 # 出力
 fg.rss_file('rss_output/combined.xml')
