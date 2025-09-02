@@ -48,7 +48,11 @@ with sync_playwright() as p:
 
     try:
         print("▶ ページにアクセス中...")
-        page.goto(BASE_URL, timeout=30000)
+        page.goto(BASE_URL, timeout=120000)
+        try:
+            page.wait_for_load_state("networkidle", timeout=120000)
+        except Exception:
+            page.wait_for_load_state("domcontentloaded")
         page.wait_for_load_state("load", timeout=30000)
     except TimeoutError as e:
         print("⚠ ページの読み込みに失敗しました。")
