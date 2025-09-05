@@ -21,15 +21,15 @@ sys.path.append(SHARED_DIR)
 from rss_utils import generate_rss
 from scraper_utils import extract_items
 
-BASE_URL = "https://www.dermatol.or.jp/modules/newslist/index.php?content_id=1"
+BASE_URL = "https://www.dermatol.or.jp/medical/news/"
 GAKKAI = "日本皮膚科学会"
 
-SELECTOR_TITLE = "div#right_column div.news_title"
+SELECTOR_TITLE = "section.p-news div.news_title"
 title_selector = "a"
 title_index = 0
 href_selector = "a"
 href_index = 0
-SELECTOR_DATE = "div#right_column div.news_date"
+SELECTOR_DATE = "section.p-news div.news_date"
 date_selector = ""  
 date_index = 0       
 year_unit = "年"
